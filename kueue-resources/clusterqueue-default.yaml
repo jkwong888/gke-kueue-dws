@@ -1,0 +1,26 @@
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ClusterQueue
+metadata:
+  name: default 
+spec:
+  namespaceSelector: {} # Available to all namespaces
+  queueingStrategy: BestEffortFIFO # Default queueing strategy
+  resourceGroups:
+  - coveredResources: ["cpu", "memory"]
+    flavors:
+    - name: "default-flavor"
+      resources:
+      - name: "cpu"
+        nominalQuota: 10
+      - name: "memory"
+        nominalQuota: 10Gi
+  - coveredResources: ["nvidia.com/gpu"]
+    flavors:
+    - name: a100-80gb
+      resources:
+      - name: "nvidia.com/gpu"
+        nominalQuota: 1
+  admissionChecksStrategy:
+    admissionChecks:
+    - name: dws-prov
+      onFlavors: ["a100-80gb"]
