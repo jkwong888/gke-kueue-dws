@@ -145,64 +145,64 @@ resource "google_container_node_pool" "primary_preemptible_nodes" {
   }
 }
 
-resource "google_container_node_pool" "default_kueue_nodes" {
-  lifecycle {
-    ignore_changes = [
-      node_count,
-    ]
-  }
+# resource "google_container_node_pool" "default_kueue_nodes" {
+#   lifecycle {
+#     ignore_changes = [
+#       node_count,
+#     ]
+#   }
 
-  depends_on = [
-    google_container_cluster.primary,
-  ]
+#   depends_on = [
+#     google_container_cluster.primary,
+#   ]
 
-  name       = format("%s-queue-default-nodepool", var.gke_cluster_name)
-  location   = var.gke_cluster_location
-  cluster    = var.gke_cluster_name
-  node_count = 0
+#   name       = format("%s-queue-default-nodepool", var.gke_cluster_name)
+#   location   = var.gke_cluster_location
+#   cluster    = var.gke_cluster_name
+#   node_count = 0
 
-  project    = module.service_project.project_id
+#   project    = module.service_project.project_id
 
-  autoscaling {
-    min_node_count = 0
-    max_node_count = 4
-    location_policy = "ANY"
-  }
+#   autoscaling {
+#     min_node_count = 0
+#     max_node_count = 4
+#     location_policy = "ANY"
+#   }
 
-  node_locations = [
-    "us-central1-a",
-    "us-central1-c"
-  ]
+#   node_locations = [
+#     "us-central1-a",
+#     "us-central1-c"
+#   ]
 
-  node_config {
-    machine_type = "n2-standard-2"
+#   node_config {
+#     machine_type = "n2-standard-2"
 
-    metadata = {
-      disable-legacy-endpoints = "true"
-    }
+#     metadata = {
+#       disable-legacy-endpoints = "true"
+#     }
 
-    workload_metadata_config {
-      mode = "GKE_METADATA"
-    }
+#     workload_metadata_config {
+#       mode = "GKE_METADATA"
+#     }
 
-    service_account = google_service_account.gke_sa.email
-    oauth_scopes = [
-      "https://www.googleapis.com/auth/cloud-platform"
-    ]
+#     service_account = google_service_account.gke_sa.email
+#     oauth_scopes = [
+#       "https://www.googleapis.com/auth/cloud-platform"
+#     ]
 
-    tags = [
-      "b${random_string.gke_nodepool_network_tag.id}"
-    ]
+#     tags = [
+#       "b${random_string.gke_nodepool_network_tag.id}"
+#     ]
 
-    # prevent workloads not scheduled with kueue from running
-    taint {
-      key = "kueue"
-      value = "true"
-      effect ="NO_SCHEDULE"
-    }
+#     # prevent workloads not scheduled with kueue from running
+#     taint {
+#       key = "kueue"
+#       value = "true"
+#       effect ="NO_SCHEDULE"
+#     }
 
-  }
-}
+#   }
+#}
 
 resource "google_container_node_pool" "a100_80gb_nodes" {
   lifecycle {
@@ -273,6 +273,7 @@ resource "google_container_node_pool" "a100_80gb_nodes" {
       consume_reservation_type = "NO_RESERVATION"
     }
 
+    # TODDO these nodes might not be exposed directly to the internet so maybe we don't need this
     tags = [
       "b${random_string.gke_nodepool_network_tag.id}"
     ]

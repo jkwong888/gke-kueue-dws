@@ -6,21 +6,25 @@ spec:
   namespaceSelector: {} # Available to all namespaces
   queueingStrategy: BestEffortFIFO # Default queueing strategy
   resourceGroups:
-  - coveredResources: ["cpu", "memory"]
+  - coveredResources: ["cpu", "memory", "nvidia.com/gpu"]
     flavors:
     - name: "default-flavor"
       resources:
       - name: "cpu"
-        nominalQuota: 10
+        nominalQuota: 100           # how many total CPUs to allow for default flavor
       - name: "memory"
-        nominalQuota: 10Gi
-  - coveredResources: ["nvidia.com/gpu"]
-    flavors:
+        nominalQuota: 800Gi         # how much total Mem to allow for default flavor
+      - name: "nvidia.com/gpu"
+        nominalQuota: 0
     - name: a100-80gb
       resources:
+      - name: "cpu"
+        nominalQuota: 100           # how many total CPUs to allow for default flavor
+      - name: "memory"
+        nominalQuota: 800Gi         # how much total Mem to allow for default flavor
       - name: "nvidia.com/gpu"
-        nominalQuota: 1
+        nominalQuota: 12            # how many total GPUs to allow for a100 gpu
   admissionChecksStrategy:
     admissionChecks:
-    - name: dws-prov
+    - name: dws-prov                # make sure we use DWS to request nodes from a100-80gb
       onFlavors: ["a100-80gb"]

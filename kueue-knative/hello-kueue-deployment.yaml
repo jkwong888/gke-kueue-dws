@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-deployment
+  labels:
+    app: hello
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello 
+      kueue.x-k8s.io/queue-name: a100-80gb
+  template:
+    metadata:
+      labels:
+        app: hello
+        kueue.x-k8s.io/queue-name: a100-80gb
+    spec:
+      nodeSelector:
+        cloud.google.com/gke-nodepool: kueue-dev-a100-80gb-nodepool
+      tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Exists"
+        effect: "NoSchedule"
+      - key: "kueue"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      containers:
+      - name: hello
+        image: ghcr.io/knative/helloworld-go:latest
+        ports:
+          - containerPort: 8080
+        env:
+          - name: TARGET
+            value: "World"
+        resources:
+          requests:
+            nvidia.com/gpu: "1"
+          limits:
+            nvidia.com/gpu: "1"
+
