@@ -1,0 +1,118 @@
+apiVersion: ray.io/v1alpha1
+kind: RayCluster
+metadata:
+  name: raycluster-complete
+spec:
+  rayVersion: "2.9.3"
+  enableInTreeAutoscaling: true
+  autoscalerOptions:
+    upscalingMode: Default
+    idleTimeoutSeconds: 60
+  headServiceAnnotations: 
+    networking.gke.io/load-balancer-type: "Internal"
+  headGroupSpec:
+    serviceType: LoadBalancer # Options are ClusterIP, NodePort, and LoadBalancer
+    rayStartParams:
+      dashboard-host: "0.0.0.0"
+      num-cpus: "0"
+    template: # Pod template
+        metadata:
+          annotations: {} # Pod metadata
+        spec: # Pod spec
+            containers:
+            - name: ray-head
+              image: rayproject/ray:2.9.3-py310
+              resources:
+                limits:
+                  cpu: 2 
+                  memory: 4Gi
+                requests:
+                  cpu: 2
+                  memory: 4Gi
+              # Keep this preStop hook in each Ray container config.
+              lifecycle:
+                preStop:
+                  exec:
+                    command: ["/bin/sh","-c","ray stop"]
+              ports: # Optional service port overrides
+              - containerPort: 6379
+                name: gcs
+              - containerPort: 8265
+                name: dashboard
+              - containerPort: 10001
+                name: client
+              - containerPort: 8000
+                name: serve
+              volumeMounts:
+              - mountPath: /tmp/ray
+                name: log-volume
+            volumes:
+              - emptyDir: {}
+                name: log-volume
+
+  workerGroupSpecs:
+  - groupName: cpu-group
+    replicas: 0
+    minReplicas: 0
+    maxReplicas: 5
+    rayStartParams:
+        {}
+    template: # Pod template
+      spec:
+        containers:
+        - name: ray-worker
+          image: rayproject/ray:2.9.3-py310
+          resources:
+            limits:
+              cpu: 2
+              memory: 4Gi
+            requests:
+              cpu: 2
+              memory: 4Gi
+          volumeMounts:
+          - mountPath: /tmp/ray
+            name: log-volume
+        volumes:
+        - emptyDir: {}
+          name: log-volume
+
+  # Another workerGroup
+  - groupName: a100-dws-group
+    replicas: 0
+    minReplicas: 0
+    maxReplicas: 5
+    rayStartParams:
+        {}
+    template: # Pod template
+      metadata:
+        labels:
+          kueue.x-k8s.io/queue-name: a100-80gb
+      spec:
+        nodeSelector:
+          cloud.google.com/gke-nodepool: kueue-dev-a100-80gb-nodepool
+        tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
+        - key: "kueue"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
+        containers:
+        - name: ray-worker
+          image: rayproject/ray:2.9.3-py310-gpu
+          resources:
+            limits:
+              cpu: 8
+              memory: 32Gi
+              nvidia.com/gpu: 1
+            requests:
+              cpu: 8
+              memory: 32Gi
+              nvidia.com/gpu: 1
+          volumeMounts:
+          - mountPath: /tmp/ray
+            name: log-volume
+        volumes:
+        - emptyDir: {}
+          name: log-volume
