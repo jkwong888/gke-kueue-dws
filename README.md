@@ -24,7 +24,7 @@ Note that the node selectors match the nodepool names in the Resource Flavors ..
 You can try my sample workloads:
 - [kueue-workload-jobs](./kueue-workload-jobs/) runs kubernetes batch/jobs api on nodes provisioned by DWS
 - [kueue-knative](./kueue-knative) use kueue to request resources through DWS for inference
-- TODO kueue-kuberay for kuberay worker nodes requested through kueue
+- [kueue-ray](./kueue-ray) for kuberay worker nodes requested through kueue
 
 
 The Kueue / DWS integration roughly works like this, if you need to debug it:
