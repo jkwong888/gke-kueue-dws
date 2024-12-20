@@ -25,13 +25,7 @@ KNative is a serving stack that runs on top of Kubernetes.  It supports scale-up
        - key: kubernetes.io/metadata.name
            operator: NotIn
            values: [ kube-system, kueue-system, knative-serving, kourier-system, cert-manager, kserve ]
-       # Kueue uses podSelector to manage pods with particular 
-       # labels. The default podSelector will match all the pods. 
-       podSelector:
-       matchExpressions:
-       - key: kueue-job
-           operator: In
-           values: [ "true", "True", "yes" ]
+
    ```
    
 
