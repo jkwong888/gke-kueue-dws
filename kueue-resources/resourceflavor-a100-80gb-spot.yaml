@@ -1,0 +1,19 @@
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ResourceFlavor
+metadata:
+  name: a100-80gb-spot # This ResourceFlavor for A100 80GB nodes
+spec:
+  nodeLabels:
+    cloud.google.com/gke-nodepool: kueue-dev-a100-spot-nodepool
+    cloud.google.com/gke-spot: "true"
+  nodeTaints:                # node taints that this resource flavor represents
+  - effect: NoSchedule
+    key: kueue
+    value: "true"
+  - key: "nvidia.com/gpu"
+    value: "present"
+    effect: "NoSchedule"
+  tolerations:               # tolerations added to pods -- admit to the node taints above
+  - key: "kueue"
+    operator: "Exists"
+    effect: "NoSchedule"

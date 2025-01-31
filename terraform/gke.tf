@@ -281,6 +281,57 @@ resource "google_container_node_pool" "a100_80gb_nodes" {
   }
 }
 
+resource "google_container_node_pool" "spot_a100_80gb_nodes" {
+  lifecycle {
+    ignore_changes = [
+      node_count,
+    ]
+  }
+
+  depends_on = [
+    google_container_cluster.primary,
+  ]
+
+  name       = format("%s-a100-spot-nodepool", var.gke_cluster_name)
+  location   = var.gke_cluster_location
+  cluster    = var.gke_cluster_name
+  node_count = 0
+
+  project    = module.service_project.project_id
+
+  autoscaling {
+    min_node_count = 0
+    max_node_count = 4
+    location_policy = "ANY"
+  }
+
+  node_locations = [
+    "us-central1-c"
+  ]
+
+  node_config {
+    spot  = var.gke_use_preemptible_nodes
+    machine_type = "a2-ultragpu-1g"
+
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
+
+    service_account = google_service_account.gke_sa.email
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+
+    tags = [
+      "b${random_string.gke_nodepool_network_tag.id}"
+    ]
+  }
+}
+
 resource "google_compute_firewall" "cluster_api_webhook" {
   name    = "${var.gke_cluster_name}-allow-webhook"
   project     = data.google_project.host_project.project_id

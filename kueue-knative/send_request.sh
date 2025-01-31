@@ -2,7 +2,8 @@
 
 set -x
 
-URL=http://llama3.default.kueue-dev.gcp.jkwong.info
+#URL=http://llama3.default.kueue-dev.gcp.jkwong.info
+URL=http://llama3-spot.default.kueue-dev.gcp.jkwong.info
 
 curl -X POST \
     ${URL}/v1/completions \
