@@ -72,6 +72,9 @@ resource "google_container_cluster" "primary" {
   subnetwork = module.service_project.subnets[0].self_link
 
   #enable_autopilot = true
+  cost_management_config {
+    enabled = true
+  }
 
   ip_allocation_policy {
     cluster_secondary_range_name = var.gke_subnet_pods_range_name
@@ -123,7 +126,7 @@ resource "google_container_node_pool" "primary_preemptible_nodes" {
 
 
   node_config {
-    preemptible  = var.gke_use_preemptible_nodes
+    spot  = var.gke_use_preemptible_nodes
     machine_type = var.gke_default_nodepool_machine_type
 
     metadata = {
@@ -145,7 +148,7 @@ resource "google_container_node_pool" "primary_preemptible_nodes" {
   }
 }
 
-resource "google_container_node_pool" "default_primary_nodes" {
+resource "google_container_node_pool" "dws_a100_80gb_nodes" {
   lifecycle {
     ignore_changes = [
       node_count,
@@ -156,59 +159,7 @@ resource "google_container_node_pool" "default_primary_nodes" {
     google_container_cluster.primary,
   ]
 
-  name       = format("%s-default-nodepool", var.gke_cluster_name)
-  location   = var.gke_cluster_location
-  cluster    = var.gke_cluster_name
-  node_count = 0
-
-  project    = module.service_project.project_id
-
-  autoscaling {
-    min_node_count = 0
-    max_node_count = 4
-    location_policy = "ANY"
-  }
-
-  node_locations = [
-    "us-central1-c"
-  ]
-
-  node_config {
-    preemptible  = var.gke_use_preemptible_nodes
-    machine_type = "e2-standard-4"
-
-    metadata = {
-      disable-legacy-endpoints = "true"
-    }
-
-    workload_metadata_config {
-      mode = "GKE_METADATA"
-    }
-
-    service_account = google_service_account.gke_sa.email
-    oauth_scopes = [
-      "https://www.googleapis.com/auth/cloud-platform"
-    ]
-
-    tags = [
-      "b${random_string.gke_nodepool_network_tag.id}"
-    ]
-
-  }
-}
-
-resource "google_container_node_pool" "a100_80gb_nodes" {
-  lifecycle {
-    ignore_changes = [
-      node_count,
-    ]
-  }
-
-  depends_on = [
-    google_container_cluster.primary,
-  ]
-
-  name       = format("%s-a100-80gb-nodepool", var.gke_cluster_name)
+  name       = format("%s-a100-80gb-dws", var.gke_cluster_name)
   location   = var.gke_cluster_location
   cluster    = var.gke_cluster_name
   node_count = 0
@@ -225,7 +176,6 @@ resource "google_container_node_pool" "a100_80gb_nodes" {
   }
 
   node_locations = [
-    "us-central1-a",
     "us-central1-c"
   ]
 
@@ -272,10 +222,20 @@ resource "google_container_node_pool" "a100_80gb_nodes" {
     ]
 
     # prevent workloads not scheduled with kueue from running
-    taint {
-      key = "kueue"
-      value = "true"
-      effect ="NO_SCHEDULE"
+    # taint {
+    #     key = "kueue"
+    #     value = "true"
+    #     effect ="NO_SCHEDULE"
+    # }
+
+    # taint {
+    #     key = "cloud.google.com/compute-class"
+    #     value = "a100-80gb"
+    #     effect ="NO_SCHEDULE"
+    # }
+
+    labels = {
+      "cloud.google.com/compute-class": "a100-80gb"
     }
 
   }
@@ -292,7 +252,7 @@ resource "google_container_node_pool" "spot_a100_80gb_nodes" {
     google_container_cluster.primary,
   ]
 
-  name       = format("%s-a100-spot-nodepool", var.gke_cluster_name)
+  name       = format("%s-a100-80gb-spot", var.gke_cluster_name)
   location   = var.gke_cluster_location
   cluster    = var.gke_cluster_name
   node_count = 0
@@ -329,6 +289,79 @@ resource "google_container_node_pool" "spot_a100_80gb_nodes" {
     tags = [
       "b${random_string.gke_nodepool_network_tag.id}"
     ]
+
+    taint {
+        key = "cloud.google.com/compute-class"
+        value = "a100-80gb"
+        effect ="NO_SCHEDULE"
+    }
+
+    labels = {
+      "cloud.google.com/compute-class": "a100-80gb"
+    }
+
+  }
+}
+
+resource "google_container_node_pool" "spot_h100_80gb_nodes" {
+  lifecycle {
+    ignore_changes = [
+      node_count,
+    ]
+  }
+
+  depends_on = [
+    google_container_cluster.primary,
+  ]
+
+  name       = format("%s-h100-80gb-spot", var.gke_cluster_name)
+  location   = var.gke_cluster_location
+  cluster    = var.gke_cluster_name
+  node_count = 0
+
+  project    = module.service_project.project_id
+
+  autoscaling {
+    min_node_count = 0
+    max_node_count = 4
+    location_policy = "ANY"
+  }
+
+  node_locations = [
+    "us-central1-c"
+  ]
+
+  node_config {
+    spot  = var.gke_use_preemptible_nodes
+    machine_type = "a3-highgpu-1g"
+
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
+
+    service_account = google_service_account.gke_sa.email
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+
+    tags = [
+      "b${random_string.gke_nodepool_network_tag.id}"
+    ]
+
+    taint {
+        key = "cloud.google.com/compute-class"
+        value = "a100-80gb"
+        effect ="NO_SCHEDULE"
+    }
+
+    labels = {
+      "cloud.google.com/compute-class": "a100-80gb"
+    }
+
   }
 }
 
