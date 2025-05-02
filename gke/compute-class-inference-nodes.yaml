@@ -6,6 +6,6 @@ spec:
   nodePoolAutoCreation:
     enabled: false
   priorities:
-  - nodepools: ['kueue-dev-a2-ultra-spot-inf']
-  - nodepools: ['kueue-dev-a3-high-spot-inf']
+  - nodepools: ['kueue-dev-a2-ultra-spt-inf']
+  - nodepools: ['kueue-dev-a3-high-spt-inf']
   whenUnsatisfiable: ScaleUpAnyway
