@@ -14,14 +14,14 @@ spec:
   template:
     spec:
       nodeSelector:
-        cloud.google.com/gke-nodepool: kueue-dev-a100-80gb-nodepool
+        cloud.google.com/compute-class: a100-80gb
       tolerations:
       - key: "nvidia.com/gpu"
         operator: "Exists"
         effect: "NoSchedule"
-      - key: "kueue"
+      - key: "cloud.google.com/compute-class"
         operator: "Equal"
-        value: "true"
+        value: "a100-80gb"
         effect: "NoSchedule"
       containers:
       - name: dummy-job

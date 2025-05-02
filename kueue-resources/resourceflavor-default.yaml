@@ -2,15 +2,4 @@ apiVersion: kueue.x-k8s.io/v1beta1
 kind: ResourceFlavor
 metadata:
   name: default-flavor # This ResourceFlavor will be used for all the resources
-spec:
-  nodeLabels:
-    cloud.google.com/gke-nodepool: kueue-dev-queue-default-nodepool
-  nodeTaints:                # node taints that this resource flavor represents
-  - effect: NoSchedule
-    key: kueue
-    value: "true"
-  tolerations:               # tolerations added to pods -- admit to the node taints above
-  - key: "kueue"
-    operator: "Exists"
-    effect: NoSchedule
 

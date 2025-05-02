@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow                  # new type of k8s spec
+metadata:
+  generateName: ml-training-qp-    # name of the workflow spec
+spec:
+  entrypoint: run       # invoke the hello-world template
+  serviceAccountName: workflow-executor
+  templates:
+    - name: provision-request
+      resource:
+        action: create
+        setOwnerReference: true
+        manifest: |
+          apiVersion: autoscaling.x-k8s.io/v1
+          kind: ProvisioningRequest
+          metadata:
+            generateName: a100-80gb-dws-
+          spec:
+            provisioningClassName: queued-provisioning.gke.io
+            parameters:
+              maxRunDurationSeconds: "604800"
+            podSets:
+            - count: 1
+              podTemplateRef:
+                name: a100-80gb-dws
+      outputs:
+        parameters:
+        - name: provreq-name
+          valueFrom:
+            jsonPath: '{.metadata.name}'
+    - name: hello-world         # name of the template
+      inputs:
+        parameters:
+        - name: provreq-name
+      metadata:
+        annotations:
+          autoscaling.x-k8s.io/consume-provisioning-request: "{{inputs.parameters.provreq-name}}"
+          autoscaling.x-k8s.io/provisioning-class-name: "queued-provisioning.gke.io"
+      container:
+        image: busybox
+        command: [ echo ]
+        args: [ "hello world" ]
+        resources: # limit the resources
+          limits:
+            memory: 32Mi
+            cpu: 100m
+            nvidia.com/gpu: 1
+    - name: run
+      steps:
+        # TODO: search for provision requests that are under utilized before creating one
+        - - name: provreq
+            template: provision-request
+        # TODO: wait until the provision request is fulfilled before continuing
+        - - name: go
+            template: hello-world
+            arguments:
+              parameters:
+              - name: provreq-name
+                value: "{{steps.provreq.outputs.parameters.provreq-name}}"
+            

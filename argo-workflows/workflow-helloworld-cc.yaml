@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow                  # new type of k8s spec
+metadata:
+  generateName: ml-training-cc-    # name of the workflow spec
+spec:
+  entrypoint: run       # invoke the hello-world template
+  serviceAccountName: workflow-executor
+  templates:
+    - name: hello-world         # name of the template
+      nodeSelector:
+        cloud.google.com/compute-class: training-nodes
+      container:
+        image: busybox
+        command: [ echo ]
+        args: [ "hello world" ]
+        resources: # limit the resources
+          limits:
+            memory: 32Mi
+            cpu: 100m
+            nvidia.com/gpu: 1
+    - name: run
+      steps:
+        - - name: go
+            template: hello-world
+            

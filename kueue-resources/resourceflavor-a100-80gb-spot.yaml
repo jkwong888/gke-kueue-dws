@@ -7,9 +7,6 @@ spec:
     cloud.google.com/gke-nodepool: kueue-dev-a100-spot-nodepool
     cloud.google.com/gke-spot: "true"
   nodeTaints:                # node taints that this resource flavor represents
-  - effect: NoSchedule
-    key: kueue
-    value: "true"
   - key: "nvidia.com/gpu"
     value: "present"
     effect: "NoSchedule"

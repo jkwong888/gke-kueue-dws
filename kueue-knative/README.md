@@ -77,3 +77,12 @@ KNative is a serving stack that runs on top of Kubernetes.  It supports scale-up
 
 
 The KNative `service` object creates a Kubernetes `deployment` object which scales up replicas based on the number of requests received by the gateway.
+
+
+# Use compute class to target a set of nodepools
+
+Use custom compute class to target a set of nodepools.  the first nodepool that provisions a node will have the pod scheduled.  For example we will have this service run on nodepools of class `inference-nodes`.
+
+```
+kubectl create llama3-knative-service-cc.yaml
+```

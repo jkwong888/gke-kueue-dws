@@ -1,0 +1,12 @@
+apiVersion: autoscaling.x-k8s.io/v1
+kind: ProvisioningRequest
+metadata:
+  generateName: training-pod-
+spec:
+  provisioningClassName: queued-provisioning.gke.io
+  parameters:
+    maxRunDurationSeconds: "604800"
+  podSets:
+  - count: 1
+    podTemplateRef:
+      name: training-pod

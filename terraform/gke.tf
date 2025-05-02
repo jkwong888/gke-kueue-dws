@@ -148,7 +148,7 @@ resource "google_container_node_pool" "primary_preemptible_nodes" {
   }
 }
 
-resource "google_container_node_pool" "dws_a100_80gb_nodes" {
+resource "google_container_node_pool" "a2_ultra_nodes_dws_trn" {
   lifecycle {
     ignore_changes = [
       node_count,
@@ -159,7 +159,7 @@ resource "google_container_node_pool" "dws_a100_80gb_nodes" {
     google_container_cluster.primary,
   ]
 
-  name       = format("%s-a100-80gb-dws", var.gke_cluster_name)
+  name       = format("%s-a2-ultra-dws-trn", var.gke_cluster_name)
   location   = var.gke_cluster_location
   cluster    = var.gke_cluster_name
   node_count = 0
@@ -230,18 +230,18 @@ resource "google_container_node_pool" "dws_a100_80gb_nodes" {
 
     # taint {
     #     key = "cloud.google.com/compute-class"
-    #     value = "a100-80gb"
+    #     value = "training-nodes"
     #     effect ="NO_SCHEDULE"
     # }
 
     labels = {
-      "cloud.google.com/compute-class": "a100-80gb"
+      "cloud.google.com/compute-class": "training-nodes"
     }
 
   }
 }
 
-resource "google_container_node_pool" "spot_a100_80gb_nodes" {
+resource "google_container_node_pool" "a2_ultra_nodes_spt_trn" {
   lifecycle {
     ignore_changes = [
       node_count,
@@ -252,7 +252,7 @@ resource "google_container_node_pool" "spot_a100_80gb_nodes" {
     google_container_cluster.primary,
   ]
 
-  name       = format("%s-a100-80gb-spot", var.gke_cluster_name)
+  name       = format("%s-a2-ultra-spt-trn", var.gke_cluster_name)
   location   = var.gke_cluster_location
   cluster    = var.gke_cluster_name
   node_count = 0
@@ -292,18 +292,18 @@ resource "google_container_node_pool" "spot_a100_80gb_nodes" {
 
     taint {
         key = "cloud.google.com/compute-class"
-        value = "a100-80gb"
+        value = "training-nodes"
         effect ="NO_SCHEDULE"
     }
 
     labels = {
-      "cloud.google.com/compute-class": "a100-80gb"
+      "cloud.google.com/compute-class": "training-nodes"
     }
 
   }
 }
 
-resource "google_container_node_pool" "spot_h100_80gb_nodes" {
+resource "google_container_node_pool" "a3_high_nodes_spt_trn" {
   lifecycle {
     ignore_changes = [
       node_count,
@@ -314,7 +314,7 @@ resource "google_container_node_pool" "spot_h100_80gb_nodes" {
     google_container_cluster.primary,
   ]
 
-  name       = format("%s-h100-80gb-spot", var.gke_cluster_name)
+  name       = format("%s-a3-high-spt-trn", var.gke_cluster_name)
   location   = var.gke_cluster_location
   cluster    = var.gke_cluster_name
   node_count = 0
@@ -348,18 +348,150 @@ resource "google_container_node_pool" "spot_h100_80gb_nodes" {
       "https://www.googleapis.com/auth/cloud-platform"
     ]
 
+    ephemeral_storage_local_ssd_config {
+      local_ssd_count = 2
+    }
+
     tags = [
       "b${random_string.gke_nodepool_network_tag.id}"
     ]
 
     taint {
         key = "cloud.google.com/compute-class"
-        value = "a100-80gb"
+        value = "training-nodes"
         effect ="NO_SCHEDULE"
     }
 
     labels = {
-      "cloud.google.com/compute-class": "a100-80gb"
+      "cloud.google.com/compute-class": "training-nodes"
+    }
+
+  }
+}
+
+resource "google_container_node_pool" "a2_ultra_nodes_spt_inf" {
+  lifecycle {
+    ignore_changes = [
+      node_count,
+    ]
+  }
+
+  depends_on = [
+    google_container_cluster.primary,
+  ]
+
+  name       = format("%s-a2-ultra-spt-inf", var.gke_cluster_name)
+  location   = var.gke_cluster_location
+  cluster    = var.gke_cluster_name
+  node_count = 0
+
+  project    = module.service_project.project_id
+
+  autoscaling {
+    min_node_count = 0
+    max_node_count = 4
+    location_policy = "ANY"
+  }
+
+  node_locations = [
+    "us-central1-c"
+  ]
+
+  node_config {
+    spot  = var.gke_use_preemptible_nodes
+    machine_type = "a2-ultragpu-1g"
+
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
+
+    service_account = google_service_account.gke_sa.email
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+
+    tags = [
+      "b${random_string.gke_nodepool_network_tag.id}"
+    ]
+
+    taint {
+        key = "cloud.google.com/compute-class"
+        value = "inference-nodes"
+        effect ="NO_SCHEDULE"
+    }
+
+    labels = {
+      "cloud.google.com/compute-class": "inference-nodes"
+    }
+
+  }
+}
+
+resource "google_container_node_pool" "a3_high_nodes_spt_inf" {
+  lifecycle {
+    ignore_changes = [
+      node_count,
+    ]
+  }
+
+  depends_on = [
+    google_container_cluster.primary,
+  ]
+
+  name       = format("%s-a3-high-spt-inf", var.gke_cluster_name)
+  location   = var.gke_cluster_location
+  cluster    = var.gke_cluster_name
+  node_count = 0
+
+  project    = module.service_project.project_id
+
+  autoscaling {
+    min_node_count = 0
+    max_node_count = 4
+    location_policy = "ANY"
+  }
+
+  node_locations = [
+    "us-central1-c"
+  ]
+
+  node_config {
+    spot  = var.gke_use_preemptible_nodes
+    machine_type = "a3-highgpu-1g"
+
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
+
+    service_account = google_service_account.gke_sa.email
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+
+    ephemeral_storage_local_ssd_config {
+      local_ssd_count = 2
+    }
+
+    tags = [
+      "b${random_string.gke_nodepool_network_tag.id}"
+    ]
+
+    taint {
+        key = "cloud.google.com/compute-class"
+        value = "inference-nodes"
+        effect ="NO_SCHEDULE"
+    }
+
+    labels = {
+      "cloud.google.com/compute-class": "inference-nodes"
     }
 
   }
