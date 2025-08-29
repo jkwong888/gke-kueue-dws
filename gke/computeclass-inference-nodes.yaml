@@ -1,0 +1,22 @@
+apiVersion: cloud.google.com/v1
+kind: ComputeClass
+metadata:
+  name: inference-nodes
+spec:
+  autoscalingPolicy:
+    consolidationDelayMinutes: 1    # check for node reclaim after this many minutes
+    gpuConsolidationThreshold: 100  # node eligible for removal if less than 100% GPU utilization (i.e. no pods using GPU)
+  nodePoolAutoCreation:
+    enabled: true
+  nodePoolConfig:
+    serviceAccount: kueue-dev-sa@jkwng-kueue-dev.iam.gserviceaccount.com
+  priorities:
+  - nodepools: ['kueue-dev-a2-ultra-spt-inf']   # prefer spot nodes
+  - nodepools: ['kueue-dev-a2-ultra-dws-inf']   # then scale up dws nodepool
+  # - machineType: a2-ultragpu-1g     # autocreate a nodepool
+  #   flexStart:
+  #     enabled: true
+  #     nodeRecycling:
+  #       leadTimeSeconds: 3600       # create a new node 1 hour before existing nodes expire
+  whenUnsatisfiable: DoNotScaleUp
+

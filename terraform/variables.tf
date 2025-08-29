@@ -49,6 +49,7 @@ variable "service_project_apis_to_enable" {
     "servicenetworking.googleapis.com",
     "certificatemanager.googleapis.com",
     "iap.googleapis.com",
+    "containerfilesystem.googleapis.com",
   ]
 }
 

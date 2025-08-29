@@ -4,13 +4,17 @@
 apiVersion: cloud.google.com/v1
 kind: ComputeClass
 metadata:
-  name: training-nodes
+  name: gemma3-inf-nodes
 spec:
   nodePoolAutoCreation:
     enabled: false
+  activeMigration:
+    optimizeRulePriority: true
+  autoscalingPolicy:
+    consolidationDelayMinutes: 2    # wait two minutes before we clean underutilized nodes
+  nodePoolConfig:
+    serviceAccount: kueue-dev-sa@jkwng-kueue-dev.iam.gserviceaccount.com
   priorities:
-  - nodepools: ['kueue-dev-a2-ultra-spt-trn']
-  - nodepools: ['kueue-dev-a3-high-spt-trn']
-  - nodepools: ['kueue-dev-a2-ultra-dws-trn']
-  - nodepools: ['kueue-dev-a3-high-dws-trn']
+  - nodepools: ['gemma3-inf-spt-l4']   # prefer spot nodes
+  - nodepools: ['gemma3-inf-ond-l4']   # then ondemand nodes
   whenUnsatisfiable: DoNotScaleUp   # if pod cannot be satisfied by any of the above, leave the pod pending

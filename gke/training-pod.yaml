@@ -1,3 +1,5 @@
+# use this pod template to define how to create the provisioning request
+# note we can be more specific by adding in machine family / machine types to specify what GPU we want
 apiVersion: v1
 kind: PodTemplate
 metadata:

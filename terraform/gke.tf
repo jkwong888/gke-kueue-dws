@@ -91,9 +91,51 @@ resource "google_container_cluster" "primary" {
     workload_pool = "${module.service_project.project_id}.svc.id.goog"
   }
 
+  node_pool_auto_config {
+    network_tags {
+      tags = ["b${random_string.gke_nodepool_network_tag.id}"]
+    }
+    
+  }
+  node_pool_defaults {
+    node_config_defaults {
+      gcfs_config {
+        enabled = true
+      }
+    }
+  }
+
   cluster_autoscaling {
-    enabled = false # this settings is for nodepool autoprovisioning
+    enabled = true # this settings is for nodepool autoprovisioning
     autoscaling_profile = "OPTIMIZE_UTILIZATION"
+    auto_provisioning_defaults {
+      service_account = google_service_account.gke_sa.email
+    }
+    auto_provisioning_locations = [
+      "us-central1-c"
+    ]
+    resource_limits {
+      resource_type = "cpu"
+      maximum = 120
+    }
+    resource_limits {
+      resource_type = "memory"
+      maximum = 1560
+    }
+    resource_limits {
+      resource_type = "nvidia-a100-80gb"
+      maximum = 16 
+    }
+  }
+
+  node_config {
+    image_type = "COS_CONTAINERD"
+
+    spot = var.gke_use_preemptible_nodes
+
+    tags = [
+      "b${random_string.gke_nodepool_network_tag.id}"
+    ]
   }
 
 }
@@ -142,9 +184,15 @@ resource "google_container_node_pool" "primary_preemptible_nodes" {
       "https://www.googleapis.com/auth/cloud-platform"
     ]
 
+    gcfs_config {
+      enabled = true
+    }
+
+
     tags = [
       "b${random_string.gke_nodepool_network_tag.id}"
     ]
+
   }
 }
 
@@ -163,9 +211,6 @@ resource "google_container_node_pool" "a2_ultra_nodes_dws_trn" {
   location   = var.gke_cluster_location
   cluster    = var.gke_cluster_name
   node_count = 0
-  queued_provisioning {
-    enabled = true
-  }
 
   project    = module.service_project.project_id
 
@@ -184,8 +229,12 @@ resource "google_container_node_pool" "a2_ultra_nodes_dws_trn" {
     #auto_upgrade = false
   }
 
+
   node_config {
     machine_type = "a2-ultragpu-1g"
+
+    flex_start = true
+    max_run_duration = "60800s"
 
     guest_accelerator {
       type = "nvidia-a100-80gb"
@@ -202,6 +251,11 @@ resource "google_container_node_pool" "a2_ultra_nodes_dws_trn" {
     metadata = {
       disable-legacy-endpoints = "true"
     }
+
+    gcfs_config {
+      enabled = true
+    }
+
 
     workload_metadata_config {
       mode = "GKE_METADATA"
@@ -228,11 +282,11 @@ resource "google_container_node_pool" "a2_ultra_nodes_dws_trn" {
     #     effect ="NO_SCHEDULE"
     # }
 
-    # taint {
-    #     key = "cloud.google.com/compute-class"
-    #     value = "training-nodes"
-    #     effect ="NO_SCHEDULE"
-    # }
+    taint {
+        key = "cloud.google.com/compute-class"
+        value = "training-nodes"
+        effect ="NO_SCHEDULE"
+    }
 
     labels = {
       "cloud.google.com/compute-class": "training-nodes"
@@ -289,6 +343,10 @@ resource "google_container_node_pool" "a2_ultra_nodes_spt_trn" {
     tags = [
       "b${random_string.gke_nodepool_network_tag.id}"
     ]
+
+    gcfs_config {
+      enabled = true
+    }
 
     taint {
         key = "cloud.google.com/compute-class"
@@ -356,6 +414,10 @@ resource "google_container_node_pool" "a3_high_nodes_spt_trn" {
       "b${random_string.gke_nodepool_network_tag.id}"
     ]
 
+    gcfs_config {
+      enabled = true
+    }
+
     taint {
         key = "cloud.google.com/compute-class"
         value = "training-nodes"
@@ -364,6 +426,223 @@ resource "google_container_node_pool" "a3_high_nodes_spt_trn" {
 
     labels = {
       "cloud.google.com/compute-class": "training-nodes"
+    }
+
+  }
+}
+
+resource "google_container_node_pool" "a3_high_nodes_dws_trn" {
+  lifecycle {
+    ignore_changes = [
+      node_count,
+    ]
+  }
+
+  depends_on = [
+    google_container_cluster.primary,
+  ]
+
+  name       = format("%s-a3-high-dws-trn", var.gke_cluster_name)
+  location   = var.gke_cluster_location
+  cluster    = var.gke_cluster_name
+  node_count = 0
+
+  project    = module.service_project.project_id
+
+  autoscaling {
+    min_node_count = 0
+    max_node_count = 4
+    location_policy = "ANY"
+  }
+
+  node_locations = [
+    "us-central1-c"
+  ]
+
+  node_config {
+    machine_type = "a3-highgpu-1g"
+
+    flex_start = true
+    max_run_duration = "60800s"
+
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
+
+    service_account = google_service_account.gke_sa.email
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+
+    gcfs_config {
+      enabled = true
+    }
+
+    ephemeral_storage_local_ssd_config {
+      local_ssd_count = 2
+    }
+
+    tags = [
+      "b${random_string.gke_nodepool_network_tag.id}"
+    ]
+
+    taint {
+        key = "cloud.google.com/compute-class"
+        value = "training-nodes"
+        effect ="NO_SCHEDULE"
+    }
+
+    reservation_affinity {
+      consume_reservation_type = "NO_RESERVATION"
+    }
+
+    labels = {
+      "cloud.google.com/compute-class": "training-nodes"
+    }
+
+  }
+}
+
+resource "google_container_node_pool" "gemma3_inf_spot_l4" {
+  lifecycle {
+    ignore_changes = [
+      node_count,
+    ]
+    # create_before_destroy = true
+  }
+
+  depends_on = [
+    google_container_cluster.primary,
+  ]
+
+  name       = format("gemma3-inf-spt-l4")
+  location   = var.gke_cluster_location
+  cluster    = var.gke_cluster_name
+  node_count = 0
+
+  project    = module.service_project.project_id
+
+  autoscaling {
+    min_node_count = 0
+    max_node_count = 4
+    location_policy = "ANY"
+  }
+
+  node_locations = [
+    "us-central1-c"
+  ]
+
+  node_config {
+    spot  = true
+    machine_type = "g2-standard-8"
+
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
+
+    service_account = google_service_account.gke_sa.email
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+
+    tags = [
+      "b${random_string.gke_nodepool_network_tag.id}"
+    ]
+
+    gcfs_config {
+      enabled = true
+    }
+
+    secondary_boot_disks {
+      disk_image = "global/images/packer-1755110063"
+    }
+
+    taint {
+        key = "cloud.google.com/compute-class"
+        value = "gemma3-inf-nodes"
+        effect ="NO_SCHEDULE"
+    }
+
+    labels = {
+      "cloud.google.com/compute-class": "gemma3-inf-nodes",
+    }
+
+  }
+}
+
+resource "google_container_node_pool" "gemma3_inf_ond_l4" {
+  lifecycle {
+    ignore_changes = [
+      node_count,
+    ]
+    # create_before_destroy = true
+  }
+
+  depends_on = [
+    google_container_cluster.primary,
+  ]
+
+  name       = format("gemma3-inf-ond-l4")
+  location   = var.gke_cluster_location
+  cluster    = var.gke_cluster_name
+  node_count = 0
+
+  project    = module.service_project.project_id
+
+  autoscaling {
+    min_node_count = 0
+    max_node_count = 4
+    location_policy = "ANY"
+  }
+
+  node_locations = [
+    "us-central1-c"
+  ]
+
+  node_config {
+    machine_type = "g2-standard-8"
+
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
+
+    service_account = google_service_account.gke_sa.email
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+
+    tags = [
+      "b${random_string.gke_nodepool_network_tag.id}"
+    ]
+
+    gcfs_config {
+      enabled = true
+    }
+
+    secondary_boot_disks {
+      disk_image = "global/images/packer-1755110063"
+    }
+
+    taint {
+        key = "cloud.google.com/compute-class"
+        value = "gemma3-inf-nodes"
+        effect ="NO_SCHEDULE"
+    }
+
+    labels = {
+      "cloud.google.com/compute-class": "gemma3-inf-nodes"
     }
 
   }
@@ -418,6 +697,10 @@ resource "google_container_node_pool" "a2_ultra_nodes_spt_inf" {
       "b${random_string.gke_nodepool_network_tag.id}"
     ]
 
+    gcfs_config {
+      enabled = true
+    }
+
     taint {
         key = "cloud.google.com/compute-class"
         value = "inference-nodes"
@@ -431,7 +714,7 @@ resource "google_container_node_pool" "a2_ultra_nodes_spt_inf" {
   }
 }
 
-resource "google_container_node_pool" "a3_high_nodes_spt_inf" {
+resource "google_container_node_pool" "a2_ultra_nodes_dws_inf" {
   lifecycle {
     ignore_changes = [
       node_count,
@@ -442,7 +725,7 @@ resource "google_container_node_pool" "a3_high_nodes_spt_inf" {
     google_container_cluster.primary,
   ]
 
-  name       = format("%s-a3-high-spt-inf", var.gke_cluster_name)
+  name       = format("%s-a2-ultra-dws-inf", var.gke_cluster_name)
   location   = var.gke_cluster_location
   cluster    = var.gke_cluster_name
   node_count = 0
@@ -460,11 +743,16 @@ resource "google_container_node_pool" "a3_high_nodes_spt_inf" {
   ]
 
   node_config {
-    spot  = var.gke_use_preemptible_nodes
-    machine_type = "a3-highgpu-1g"
+    machine_type = "a2-ultragpu-1g"
+    flex_start = true
+    max_run_duration = "60800s"
 
     metadata = {
       disable-legacy-endpoints = "true"
+    }
+
+    reservation_affinity {
+      consume_reservation_type = "NO_RESERVATION"
     }
 
     workload_metadata_config {
@@ -477,7 +765,7 @@ resource "google_container_node_pool" "a3_high_nodes_spt_inf" {
     ]
 
     ephemeral_storage_local_ssd_config {
-      local_ssd_count = 2
+      local_ssd_count = 1
     }
 
     tags = [
@@ -490,8 +778,13 @@ resource "google_container_node_pool" "a3_high_nodes_spt_inf" {
         effect ="NO_SCHEDULE"
     }
 
+    gcfs_config {
+      enabled = true
+    }
+
     labels = {
       "cloud.google.com/compute-class": "inference-nodes"
+      "cloud.google.com/gke-node-recycle-lead-time-seconds": "3600" # create a new node 1 hour before existing nodes expire
     }
 
   }

@@ -9,7 +9,7 @@ data "google_compute_network" "shared_vpc" {
 
 module "service_project" {
   source = "git@github.com:jkwong888/tf-gcp-service-project.git"
-  #source = "../../tf-gcp-service-project"
+  # source = "../../jkwng-tf-service-project-gke"
 
   parent_folder_id            = var.service_project_parent_folder_id
   billing_account_id          = var.billing_account_id
