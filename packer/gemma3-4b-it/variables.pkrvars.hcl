@@ -1,0 +1,8 @@
+project_id = "jkwng-kueue-dev"
+zone       = "us-central1-c"
+# zone       = "northamerica-northeast2-b"
+network = "projects/jkwng-nonprod-vpc/global/networks/shared-vpc-nonprod-1"
+subnetwork = "projects/jkwng-nonprod-vpc/regions/us-central1/subnetworks/kueue-dev"
+# subnetwork = "projects/jkwng-nonprod-vpc/regions/northamerica-northeast2/subnetworks/automation-nane2"
+model_id   = "google/gemma-3-4b-it"
+model_bucket = "jkwng-model-data"

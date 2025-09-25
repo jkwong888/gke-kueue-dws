@@ -1,0 +1,14 @@
+# define a compute class for training workloads
+# we can run our training jobs on A100 80GB or H100 80GB, prefer the lowest cost for this compute class
+# so spot nodes first, then DWS
+apiVersion: cloud.google.com/v1
+kind: ComputeClass
+metadata:
+  name: a100-training-nodes
+spec:
+  nodePoolAutoCreation:
+    enabled: false
+  priorities:
+  - nodepools: ['kueue-dev-a2-high-spt-trn']
+  - nodepools: ['kueue-dev-a2-high-dws-trn']
+  whenUnsatisfiable: DoNotScaleUp   # if pod cannot be satisfied by any of the above, leave the pod pending

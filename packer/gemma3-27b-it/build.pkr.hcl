@@ -7,34 +7,20 @@ packer {
   }
 }
 
-variable "project_id" {
-  type = string
-}
-
-variable "zone" {
-  type = string
-}
-
-# variable "builder_sa" {
-#   type = string
-# }
-
 source "googlecompute" "model-data-build" {
+  image_name                  = "gemma3-4b-it-model-data-{{timestamp}}"
   project_id                  = var.project_id
   source_image_family         = "debian-12"
   zone                        = var.zone
   ssh_username                = "packer"
   tags                        = ["packer"]
-  machine_type                = "g2-standard-4"
-  # preemptible                 = true
+  machine_type                = "g2-standard-48"
+  preemptible                 = true
   on_host_maintenance         = "TERMINATE"
-
-
 
   disk_type              = "pd-balanced"
   disk_size                    = 100
 #   impersonate_service_account = var.builder_sa
-
 
   scopes = [
     "https://www.googleapis.com/auth/cloud-platform"
@@ -44,11 +30,11 @@ source "googlecompute" "model-data-build" {
   use_internal_ip = true
   use_iap = true
 
-  network = "projects/jkwng-nonprod-vpc/global/networks/shared-vpc-nonprod-1"
-  subnetwork = "projects/jkwng-nonprod-vpc/regions/us-central1/subnetworks/kueue-dev"
+  network = var.network
+  subnetwork = var.subnetwork
 
   disk_attachment {
-    device_name = "model-data"
+    device_name = var.disk_name
     volume_type = "pd-balanced"
     volume_size = 60
     create_image = true
@@ -60,40 +46,71 @@ build {
 
   # needs a reboot after installing dependencies
   provisioner "shell" {
-    script = "install_nvidia_driver.sh"
+    script = "../common/install_nvidia_driver.sh"
     expect_disconnect = true
-    pause_after = "30s"
+    pause_after = "45s"
   }
 
   # doesn't need a reboot after installing driver
   provisioner "shell" {
-    script = "install_nvidia_driver.sh"
+    script = "../common/install_nvidia_driver.sh"
     expect_disconnect = true
     pause_after = "5s"
   }
 
   # needs a reboot after cuda install
   provisioner "shell" {
-    script = "install_cuda.sh"
+    script = "../common/install_cuda.sh"
     expect_disconnect = true
     pause_after = "45s"
   }
 
   # prepare the model disk
   provisioner "shell" {
-    script = "prepare_disk.sh"
+    environment_vars = [
+      "MOUNT_PATH=${var.mount_path}/models",
+      "DISK_NAME=${var.disk_name}"
+    ]
+    script = "../common/prepare_disk.sh"
   }
+
+  # prepare the model disk
+  provisioner "shell" {
+    environment_vars = [ 
+      "BUCKET_ID=${var.model_bucket}",
+      "MODEL_PREFIX=${var.bucket_model_prefix}",
+      "CACHE_PREFIX=${var.bucket_cache_prefix}",
+      "MOUNT_PATH=${var.mount_path}",
+    ]
+
+    pause_before = "5s"
+    script = "../common/gcsfuse.sh"
+  }
+
 
   # download the model
   provisioner "shell" {
-    script = "download_model.sh"
-    pause_before = "5s"
+    environment_vars = [ 
+      "MOUNT_PATH=${var.mount_path}",
+      "MODEL_PREFIX=${var.bucket_model_prefix}",
+      "MODEL_ID=${var.model_id}",
+      "BUCKET_ID=${var.model_bucket}",
+    ]
+
+    script = "../common/download_model.sh"
   }
 
   # build the vllm graph cache ahead of time - this actually doesn't work because the secondary boot disk is read-only
   provisioner "shell" {
-    script = "vllm.sh"
-    pause_before = "5s"
+    environment_vars = [ 
+      "MOUNT_PATH=${var.mount_path}",
+      "MODEL_PREFIX=${var.bucket_model_prefix}",
+      "CACHE_PREFIX=${var.bucket_cache_prefix}",
+      "MODEL_ID=${var.model_id}",
+    ]
+
+    script = "../common/vllm.sh"
+    # pause_before = "5s"
   }
 
 }

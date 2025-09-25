@@ -8,7 +8,7 @@ spec:
   templates:
     - name: hello-world         # name of the template
       nodeSelector:
-        cloud.google.com/compute-class: training-nodes
+        cloud.google.com/compute-class: h100-training-nodes
       container:
         image: busybox
         command: [ echo ]

@@ -16,5 +16,19 @@ spec:
     serviceAccount: kueue-dev-sa@jkwng-kueue-dev.iam.gserviceaccount.com
   priorities:
   - nodepools: ['gemma3-inf-spt-l4']   # prefer spot nodes
+  - machineFamily: g2
+    gpu:
+      count: 1
+      type: nvidia-l4
+    flexStart:
+      enabled: true
+      nodeRecycling:
+        leadTimeSeconds: 3600       # create a new node 1 hour before existing nodes expire
+    storage:
+      bootDiskSize: 100
+      bootDiskType: pd-balanced
+      secondaryBootDisks:
+      - diskImageName: packer-1752671560
+
   - nodepools: ['gemma3-inf-ond-l4']   # then ondemand nodes
   whenUnsatisfiable: DoNotScaleUp   # if pod cannot be satisfied by any of the above, leave the pod pending

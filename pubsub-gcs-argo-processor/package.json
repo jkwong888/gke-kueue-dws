@@ -1,0 +1,32 @@
+{
+  "name": "pubsub-gcs-argo-processor",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "gts lint",
+    "clean": "gts clean",
+    "compile": "tsc",
+    "fix": "gts fix",
+    "pretest": "npm run compile",
+    "posttest": "npm run lint"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@google-cloud/pubsub": "^5.2.0",
+    "@google-cloud/storage": "^7.17.1",
+    "@kubernetes/client-node": "^0.20.0",
+    "google-auth-library": "^10.3.0",
+    "openai": "^5.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "@types/ws": "^8.18.1",
+    "gts": "^6.0.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}

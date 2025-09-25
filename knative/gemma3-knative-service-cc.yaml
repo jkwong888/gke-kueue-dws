@@ -1,15 +1,9 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: serving.knative.dev/v1
+kind: Service
 metadata:
   name: gemma3-vllm
 spec:
-  selector:
-    matchLabels:
-      app: gemma3-vllm
   template:
-    metadata:
-      labels:
-        app: gemma3-vllm
     spec:
       nodeSelector:
         cloud.google.com/compute-class: gemma3-inf-nodes
@@ -19,13 +13,11 @@ spec:
         effect: "NoSchedule"
       containers:
         - name: vllm
-          tty: true
-          stdin: true
           command:
           - python3
           - -m
           - vllm.entrypoints.openai.api_server
-          - --port=$(PORT)
+          - --port=$(SERVING_PORT)
           - --model=$(HF_HOME)/$(MODEL_NAME)
           - --gpu-memory-utilization
           - '0.95'
@@ -46,7 +38,7 @@ spec:
             value: "/usr/local/nvidia/lib64:/usr/local/lib/"
           - name: HF_HUB_OFFLINE
             value: "1"
-          - name: PORT
+          - name: SERVING_PORT
             value: "8000"
           - name: MODEL_NAME
             value: google/gemma-3-4b-it
@@ -101,4 +93,5 @@ spec:
         hostPath:
           path: /mnt/disks/gke-secondary-disks/gke-packer-1752671560-disk
           type: Directory
+
 

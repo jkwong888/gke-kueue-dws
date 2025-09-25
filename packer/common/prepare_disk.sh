@@ -2,8 +2,8 @@
 
 set -x
 
-DISK_NAME=model-data
-MOUNT_PATH=/mnt/disks/${DISK_NAME}
+# DISK_NAME=model-data
+# MOUNT_PATH=/mnt/disks/${DISK_NAME}
 
 DEVICE_NAME=$(readlink -f /dev/disk/by-id/google-${DISK_NAME})
 

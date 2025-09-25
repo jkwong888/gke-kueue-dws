@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prompt-template
+  namespace: processor
+data:
+  template: |
+    Please summarize the following content:
+    {content}

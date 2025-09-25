@@ -107,6 +107,7 @@ resource "google_container_cluster" "primary" {
 
   cluster_autoscaling {
     enabled = true # this settings is for nodepool autoprovisioning
+    # enabled = false # this settings is for nodepool autoprovisioning
     autoscaling_profile = "OPTIMIZE_UTILIZATION"
     auto_provisioning_defaults {
       service_account = google_service_account.gke_sa.email
@@ -132,6 +133,10 @@ resource "google_container_cluster" "primary" {
     image_type = "COS_CONTAINERD"
 
     spot = var.gke_use_preemptible_nodes
+
+    ephemeral_storage_local_ssd_config {
+      local_ssd_count = 2
+    }
 
     tags = [
       "b${random_string.gke_nodepool_network_tag.id}"
@@ -188,6 +193,11 @@ resource "google_container_node_pool" "primary_preemptible_nodes" {
       enabled = true
     }
 
+    taint {
+      key = "components.gke.io/gke-managed-components"
+      value = "true"
+      effect ="NO_SCHEDULE"
+    }
 
     tags = [
       "b${random_string.gke_nodepool_network_tag.id}"
@@ -533,7 +543,10 @@ resource "google_container_node_pool" "gemma3_inf_spot_l4" {
   }
 
   node_locations = [
+    "us-central1-a",
+    "us-central1-b",
     "us-central1-c"
+
   ]
 
   node_config {
@@ -562,7 +575,7 @@ resource "google_container_node_pool" "gemma3_inf_spot_l4" {
     }
 
     secondary_boot_disks {
-      disk_image = "global/images/packer-1755110063"
+      disk_image = "global/images/packer-1752671560"
     }
 
     taint {
@@ -604,6 +617,8 @@ resource "google_container_node_pool" "gemma3_inf_ond_l4" {
   }
 
   node_locations = [
+    "us-central1-a",
+    "us-central1-b",
     "us-central1-c"
   ]
 
@@ -632,7 +647,7 @@ resource "google_container_node_pool" "gemma3_inf_ond_l4" {
     }
 
     secondary_boot_disks {
-      disk_image = "global/images/packer-1755110063"
+      disk_image = "global/images/packer-1752671560"
     }
 
     taint {
@@ -643,148 +658,6 @@ resource "google_container_node_pool" "gemma3_inf_ond_l4" {
 
     labels = {
       "cloud.google.com/compute-class": "gemma3-inf-nodes"
-    }
-
-  }
-}
-
-resource "google_container_node_pool" "a2_ultra_nodes_spt_inf" {
-  lifecycle {
-    ignore_changes = [
-      node_count,
-    ]
-  }
-
-  depends_on = [
-    google_container_cluster.primary,
-  ]
-
-  name       = format("%s-a2-ultra-spt-inf", var.gke_cluster_name)
-  location   = var.gke_cluster_location
-  cluster    = var.gke_cluster_name
-  node_count = 0
-
-  project    = module.service_project.project_id
-
-  autoscaling {
-    min_node_count = 0
-    max_node_count = 4
-    location_policy = "ANY"
-  }
-
-  node_locations = [
-    "us-central1-c"
-  ]
-
-  node_config {
-    spot  = var.gke_use_preemptible_nodes
-    machine_type = "a2-ultragpu-1g"
-
-    metadata = {
-      disable-legacy-endpoints = "true"
-    }
-
-    workload_metadata_config {
-      mode = "GKE_METADATA"
-    }
-
-    service_account = google_service_account.gke_sa.email
-    oauth_scopes = [
-      "https://www.googleapis.com/auth/cloud-platform"
-    ]
-
-    tags = [
-      "b${random_string.gke_nodepool_network_tag.id}"
-    ]
-
-    gcfs_config {
-      enabled = true
-    }
-
-    taint {
-        key = "cloud.google.com/compute-class"
-        value = "inference-nodes"
-        effect ="NO_SCHEDULE"
-    }
-
-    labels = {
-      "cloud.google.com/compute-class": "inference-nodes"
-    }
-
-  }
-}
-
-resource "google_container_node_pool" "a2_ultra_nodes_dws_inf" {
-  lifecycle {
-    ignore_changes = [
-      node_count,
-    ]
-  }
-
-  depends_on = [
-    google_container_cluster.primary,
-  ]
-
-  name       = format("%s-a2-ultra-dws-inf", var.gke_cluster_name)
-  location   = var.gke_cluster_location
-  cluster    = var.gke_cluster_name
-  node_count = 0
-
-  project    = module.service_project.project_id
-
-  autoscaling {
-    min_node_count = 0
-    max_node_count = 4
-    location_policy = "ANY"
-  }
-
-  node_locations = [
-    "us-central1-c"
-  ]
-
-  node_config {
-    machine_type = "a2-ultragpu-1g"
-    flex_start = true
-    max_run_duration = "60800s"
-
-    metadata = {
-      disable-legacy-endpoints = "true"
-    }
-
-    reservation_affinity {
-      consume_reservation_type = "NO_RESERVATION"
-    }
-
-    workload_metadata_config {
-      mode = "GKE_METADATA"
-    }
-
-    service_account = google_service_account.gke_sa.email
-    oauth_scopes = [
-      "https://www.googleapis.com/auth/cloud-platform"
-    ]
-
-    ephemeral_storage_local_ssd_config {
-      local_ssd_count = 1
-    }
-
-    tags = [
-      "b${random_string.gke_nodepool_network_tag.id}"
-    ]
-
-    taint {
-        key = "cloud.google.com/compute-class"
-        value = "inference-nodes"
-        effect ="NO_SCHEDULE"
-    }
-
-    gcfs_config {
-      enabled = true
-    }
-
-    labels = {
-      "cloud.google.com/compute-class": "inference-nodes"
-      "cloud.google.com/gke-node-recycle-lead-time-seconds": "3600" # create a new node 1 hour before existing nodes expire
     }
 
   }

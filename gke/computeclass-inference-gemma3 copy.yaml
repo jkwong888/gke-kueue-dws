@@ -1,4 +1,4 @@
-# define a compute class for training workloads
+# define a compute class for gemma3 inference workload
 # we can run our training jobs on A100 80GB or H100 80GB, prefer the lowest cost for this compute class
 # so spot nodes first, then DWS
 apiVersion: cloud.google.com/v1
@@ -15,12 +15,19 @@ spec:
   priorities:
   - machineFamily: g2
     gpu:
-      count: 8
+      count: 1
       type: nvidia-l4
-    flexStart:
-      enabled: true
-      nodeRecycling:
-        leadTimeSeconds: 3600       # create a new node 1 hour before existing nodes expire
+    spot: true
+    storage:
+      bootDiskSize: 100
+      bootDiskType: pd-balanced
+      secondaryBootDisks:
+      - diskImageName: packer-1752671560
+ 
+  - machineFamily: g2
+    gpu:
+      count: 1
+      type: nvidia-l4
     storage:
       bootDiskSize: 100
       bootDiskType: pd-balanced

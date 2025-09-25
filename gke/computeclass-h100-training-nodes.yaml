@@ -4,13 +4,11 @@
 apiVersion: cloud.google.com/v1
 kind: ComputeClass
 metadata:
-  name: training-nodes
+  name: h100-training-nodes
 spec:
   nodePoolAutoCreation:
     enabled: false
   priorities:
-  - nodepools: ['kueue-dev-a2-ultra-spt-trn']
   - nodepools: ['kueue-dev-a3-high-spt-trn']
-  - nodepools: ['kueue-dev-a2-ultra-dws-trn']
   - nodepools: ['kueue-dev-a3-high-dws-trn']
   whenUnsatisfiable: DoNotScaleUp   # if pod cannot be satisfied by any of the above, leave the pod pending

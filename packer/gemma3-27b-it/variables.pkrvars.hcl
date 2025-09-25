@@ -1,0 +1,7 @@
+project_id = "jkwng-kueue-dev"
+# zone       = "us-central1-c"
+zone       = "northamerica-northeast2-a"
+network = "projects/jkwng-nonprod-vpc/global/networks/shared-vpc-nonprod-1"
+# subnetwork = "projects/jkwng-nonprod-vpc/regions/us-central1/subnetworks/kueue-dev"
+subnetwork = "projects/jkwng-nonprod-vpc/regions/northamerica-northeast2/subnetworks/automation-nane2"
+model_bucket = "jkwng-model-data"

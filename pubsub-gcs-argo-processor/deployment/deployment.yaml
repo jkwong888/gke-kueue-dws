@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pubsub-argo-processor
+  namespace: processor
+  labels:
+    app: pubsub-argo-processor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pubsub-argo-processor
+  template:
+    metadata:
+      labels:
+        app: pubsub-argo-processor
+    spec:
+      serviceAccountName: pubsub-argo-processor
+      containers:
+      - name: pubsub-argo-processor
+        imagePullPolicy: Always
+        image: gcr.io/jkwng-images/pubsub-argo-processor:latest # Replace with your image
+        env:
+        - name: PROJECT_ID
+          value: "jkwng-kueue-dev"
+        - name: SUBSCRIPTION_NAME
+          value: "data-bucket-changes-sub"
+        - name: MAX_MESSAGES
+          value: "10"
+        - name: PROMPT_TEMPLATE_CONFIGMAP_NAME
+          value: processor/prompt-template
+        - name: VLLM_API_URL
+          value: "http://gemma3-vllm.processor.svc.cluster.local/v1"
