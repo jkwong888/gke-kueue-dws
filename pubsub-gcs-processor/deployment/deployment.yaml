@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: pubsub-argo-processor
+  name: pubsub-gcs-processor
   namespace: processor
   labels:
-    app: pubsub-argo-processor
+    app: pubsub-gcs-processor
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: pubsub-argo-processor
+      app: pubsub-gcs-processor
   template:
     metadata:
       labels:
-        app: pubsub-argo-processor
+        app: pubsub-gcs-processor
     spec:
-      serviceAccountName: pubsub-argo-processor
+      serviceAccountName: pubsub-gcs-processor
       containers:
-      - name: pubsub-argo-processor
+      - name: pubsub-gcs-processor
         imagePullPolicy: Always
-        image: gcr.io/jkwng-images/pubsub-argo-processor:latest # Replace with your image
+        image: gcr.io/jkwng-images/pubsub-gcs-processor:latest # Replace with your image
         env:
         - name: PROJECT_ID
           value: "jkwng-kueue-dev"

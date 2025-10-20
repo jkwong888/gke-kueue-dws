@@ -26,9 +26,6 @@ This application is configured via environment variables. The following variable
 *   `VLLM_API_URL`: The URL of the vLLM API - this can be local inside of kubernetes.
 *   `PROMPT_TEMPLATE`: The prompt template to use with VLLM, format is `namespace`/`configmapname`, will look for the `template` key and replace the content in `{content}` with the contents of the object written to GCS.
 *   `HANDLER_URL`: The URL of the an API handler to call.
-*   `ARGO_WORKFLOW_NAMESPACE`: The Kubernetes namespace where your Argo workflows should be created.
-*   `WORKFLOW_CONFIGMAP_NAME`: The name of the workflow configmap.
-*   `WORKFLOW_CONFIGMAP_KEY`: The key of the workflow configmap (default template) - this will be a yaml file with the argo workflow to create.
 
 ## Running the application
 

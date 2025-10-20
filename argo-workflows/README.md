@@ -31,3 +31,7 @@ We can also have the workflow target a specific compute class - for example here
 ```
 kubectl create -f workflow-helloworld-cc.yaml
 ```
+
+## workflow executor permissions
+
+make sure workflows run as `workflow-executor` in the `workflows` namespace - this will have permission to create the `WorkflowTaskResults` CR steps during the workflow execution.

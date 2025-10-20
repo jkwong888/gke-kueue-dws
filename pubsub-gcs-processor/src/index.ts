@@ -1,6 +1,5 @@
 import {PubSub, Message} from '@google-cloud/pubsub';
 import {Storage} from '@google-cloud/storage';
-import {handleArgoWorkflow} from './argo';
 import * as k8s from '@kubernetes/client-node';
 import {GoogleAuth} from 'google-auth-library';
 import {handleHandlerUrl} from './http';
@@ -26,11 +25,10 @@ async function main() {
 
   const vllmApiUrl = process.env.VLLM_API_URL;
   const handlerUrl = process.env.HANDLER_URL;
-  const argoWorkflowNamespace = process.env.ARGO_WORKFLOW_NAMESPACE;
 
-  if (!vllmApiUrl && !handlerUrl && !argoWorkflowNamespace) {
+  if (!vllmApiUrl && !handlerUrl) {
     console.error(
-      'Either HANDLER_URL or ARGO_WORKFLOW_NAMESPACE must be set.'
+      'HANDLER_URL or VLLM_API_URL must be set.'
     );
     process.exit(1);
   }
@@ -69,11 +67,6 @@ async function main() {
         if (handled) {
           return;
         }
-      }
-
-      // Finally, fall back to Argo workflow
-      if (argoWorkflowNamespace) {
-        await handleArgoWorkflow(message, attributes, argoWorkflowNamespace);
       }
 
     } catch (err) {

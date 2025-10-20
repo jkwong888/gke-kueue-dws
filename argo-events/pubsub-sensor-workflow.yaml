@@ -1,0 +1,64 @@
+# create an argo workflow when we get a message on our pubsub topic (defined in eventsource)
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: gcp-pubsub-workflow-sensor
+spec:
+  template:
+    serviceAccountName: operate-workflow-sa 
+    container:
+      env:
+        - name: LOG_LEVEL
+          value: debug
+
+  dependencies:
+    - name: gcp-pubsub-event
+      eventSourceName: gcp-pubsub
+      eventName: data-bucket-changes
+  triggers:
+    - template:
+        name: gcp-workflow
+        k8s:
+          operation: create
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: gcp-workflow-
+                namespace: workflows
+              spec:
+                entrypoint: print-message
+                serviceAccountName: workflow-executor
+                arguments:
+                  parameters:
+                  - name: bucket
+                    # value will get overridden by the event payload
+                    value: hello world
+                  - name: name
+                    # value will get overridden by the event payload
+                    value: hello world
+                templates:
+                - name: print-message
+                  inputs:
+                    parameters:
+                    - name: bucket 
+                    - name: name
+                  container:
+                    image: busybox
+                    command: [echo]
+                    args: ["gs://{{inputs.parameters.bucket}}/{{inputs.parameters.name}}"]
+          parameters:
+            - src:
+                dependencyName: gcp-pubsub-event
+                dataKey: body.bucket 
+              dest: spec.arguments.parameters.0.value
+            - src:
+                dependencyName: gcp-pubsub-event
+                dataKey: body.name
+              dest: spec.arguments.parameters.1.value
+
+            # - src:
+            #     dependencyName: gcp-pubsub
+            #     dataKey: body 
+            #   dest: spec.arguments.parameters.1.value
