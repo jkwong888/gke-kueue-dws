@@ -32,7 +32,7 @@ resource "google_pubsub_subscription_iam_member" "data_bucket_changes_sub_proces
   project      = module.service_project.project_id
   subscription = google_pubsub_subscription.data-bucket-changes-sub.name
   role         = "roles/pubsub.subscriber"
-  member       = "principal://iam.googleapis.com/projects/${module.service_project.number}/locations/global/workloadIdentityPools/${module.service_project.project_id}.svc.id.goog/subject/ns/processor/sa/pubsub-argo-processor"
+  member       = "principal://iam.googleapis.com/projects/${module.service_project.number}/locations/global/workloadIdentityPools/${module.service_project.project_id}.svc.id.goog/subject/ns/processor/sa/pubsub-gcs-processor"
 }
 
 resource "google_pubsub_subscription_iam_member" "data_bucket_changes_sub_argo_events" {

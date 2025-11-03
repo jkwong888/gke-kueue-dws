@@ -4,10 +4,10 @@ import { Storage } from '@google-cloud/storage';
 import * as k8s from '@kubernetes/client-node';
 
 const vllmApiUrl = process.env.VLLM_API_URL || undefined;
+
 let promptTemplate: string | undefined;
 let openai: OpenAI | undefined;
-let model = 'google/gemma-2b-it'; // Default model
-
+let model: string;
 
 export async function initVllm(coreV1Api: k8s.CoreV1Api) {
   const promptTemplateEnv = process.env.PROMPT_TEMPLATE;
@@ -28,20 +28,28 @@ export async function initVllm(coreV1Api: k8s.CoreV1Api) {
     }
   }
 
-  if (vllmApiUrl) {
+  if (vllmApiUrl ) {
+    let model_env = process.env.MODEL_ID; // Default model
     openai = new OpenAI({
       baseURL: vllmApiUrl,
       apiKey: '-', // Required but not used by vLLM
     });
 
-    const models = await openai.models.list();
-    if (models.data.length === 1) {
-      model = models.data[0].id;
-    } else if (models.data.length > 1) {
-      console.log('Multiple models available, using the first one.');
-      model = models.data[0].id;
+    if (model_env) {
+      model = model_env;
+    } else {
+      // model discovery
+      const models = await openai.models.list();
+      if (models.data.length === 1) {
+        model = models.data[0].id;
+      } else if (models.data.length > 1) {
+        console.log('Multiple models available, using the first one.');
+        model = models.data[0].id;
+      }
     }
   }
+
+  console.log(`Using model ${model}`);
 }
 
 export async function callVllmApi(prompt: string): Promise<string> {

@@ -31,3 +31,5 @@ spec:
           value: processor/prompt-template
         - name: VLLM_API_URL
           value: "http://gemma3-vllm.processor.svc.cluster.local/v1"
+        - name: MODEL_ID
+          value: "google/gemma-3-4b-it"
